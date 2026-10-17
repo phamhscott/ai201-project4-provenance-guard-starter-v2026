@@ -21,6 +21,9 @@ ROOT = Path(__file__).parent
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "5000"))
 
+# count characters, including whitespace, before scoring.
+MAX_TEXT_CHARACTERS = 20_000
+
 # Flask's debug mode gives anyone who can reach the service an interactive
 # Python prompt inside your process. Fine on loopback, a gift to strangers
 # anywhere else — so it turns itself off the moment HOST isn't loopback.

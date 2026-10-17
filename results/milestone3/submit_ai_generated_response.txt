@@ -1,0 +1,3 @@
+{"confidence":null,"content_id":"6384c81c-095d-4218-b858-57e5721943a1","guess":"unsure","label":"Placeholder: model signal only; no authorship label yet.","model_score":0.5106,"status":"decided","style_score":null}
+
+HTTP_STATUS=200

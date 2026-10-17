@@ -1,0 +1,3 @@
+{"detector_loaded":true,"detector_model":"gpt2","log_entries":5,"ok":true,"rate_limiting":false}
+
+HTTP_STATUS=200

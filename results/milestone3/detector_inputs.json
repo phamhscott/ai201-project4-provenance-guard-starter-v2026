@@ -1,0 +1,12 @@
+[
+  {
+    "name": "ai_generated",
+    "source": "Written by AI during this Milestone 3 development check; not a formal evaluation sample.",
+    "text": "A submission begins when a user sends text and a creator identifier to the service. The service checks that both fields are present and valid. It then gives the submission a unique content identifier. A local language model measures how predictable the text is, and a separate style signal measures patterns in the writing. The two signals are combined into a score that determines the label shown to the reader. The service records the decision in an audit log so it can be reviewed later. If the writer disagrees with the result, they can submit an appeal using the content identifier and an explanation."
+  },
+  {
+    "name": "human_written",
+    "source": "Used verbatim for this development check. Not a formal evaluation sample.",
+    "text": "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers."
+  }
+]

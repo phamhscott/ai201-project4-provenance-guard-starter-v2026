@@ -30,6 +30,7 @@ from flask import Flask, jsonify, request
 
 import audit
 import config
+import detector
 
 app = Flask(__name__)
 
@@ -155,7 +156,7 @@ def health():
 def submit():
     """
     Take a piece of text, decide about it, log the decision, answer.
-    ← TODO — Milestones 3, 4 and 5
+    Milestone 3 implemented; combined scoring and labels remain for 4 and 5.
 
     Expects JSON:
         {"text": "...", "creator_id": "..."}
@@ -199,17 +200,69 @@ def submit():
     what should this do when `text` is missing, empty, or enormous? A crash on
     a malformed input is one of the most common real failures there is.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    creator_id = payload.get("creator_id") if isinstance(payload, dict) else None
 
-    # TODO: delete this and build the route.
+    def reject(error: str, message: str, http_status: int):
+        # Requests that cannot produce a score still leave an audit trace.
+        audit.log_rejection(
+            creator_id=(
+                creator_id
+                if isinstance(creator_id, str) and creator_id.strip()
+                else "unknown"
+            ),
+            reason=error,
+            http_status=http_status,
+        )
+        return jsonify({"error": error, "message": message}), http_status
+
+    if not isinstance(payload, dict):
+        return reject("invalid_request", "Send a JSON object with text and creator_id.", 400)
+
+    text = payload.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return reject("invalid_request", "text must be a nonblank string.", 400)
+    if not isinstance(creator_id, str) or not creator_id.strip():
+        return reject("invalid_request", "creator_id must be a nonblank string.", 400)
+    if len(text) > config.MAX_TEXT_CHARACTERS:
+        return reject(
+            "text_too_long",
+            f"text must contain at most {config.MAX_TEXT_CHARACTERS} characters.",
+            413,
+        )
+
+    try:
+        # Score the original text, stripping is only for validation above.
+        model_score = detector.model_signal(text)
+    except detector.DetectorUnavailable:
+        return reject("detector_unavailable", "The local detector could not be loaded.", 503)
+    except ValueError as exc:
+        return reject("text_too_short", str(exc), 422)
+
+    content_id = str(uuid.uuid4())
+    # Milestone 3: no style signal, combined confidence, or final label yet.
+    guess = "unsure"
+    label = "Placeholder: model signal only; no authorship label yet."
+    audit.log_decision(
+        content_id=content_id,
+        creator_id=creator_id,
+        guess=guess,
+        model_score=model_score,
+        style_score=None,
+        combined_score=None,
+        label=label,
+        status="decided",
+        stage="model_only",
+    )
     return jsonify({
-        "error": "not_implemented",
-        "message": "POST /submit isn't built yet — see the TODO in app.py.",
-        "you_sent": {
-            "text_length": len(payload.get("text", "")),
-            "creator_id": payload.get("creator_id"),
-        },
-    }), 501
+        "content_id": content_id,
+        "guess": guess,
+        "confidence": None,
+        "label": label,
+        "model_score": model_score,
+        "style_score": None,
+        "status": "decided",
+    }), 200
 
 
 @app.post("/appeal")

@@ -1,0 +1,25 @@
+CHECK: submit_ai_generated
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone3/submit_ai_generated_request.json'
+{"confidence":null,"content_id":"6384c81c-095d-4218-b858-57e5721943a1","guess":"unsure","label":"Placeholder: model signal only; no authorship label yet.","model_score":0.5106,"status":"decided","style_score":null}
+
+HTTP_STATUS=200
+
+CHECK: submit_human_written
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone3/submit_human_written_request.json'
+{"confidence":null,"content_id":"6111a423-63be-4f4d-84bf-6b4b1c764fff","guess":"unsure","label":"Placeholder: model signal only; no authorship label yet.","model_score":0.5588,"status":"decided","style_score":null}
+
+HTTP_STATUS=200
+
+CHECK: log
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' 'http://127.0.0.1:5000/log?limit=2'
+{"count":2,"entries":[{"combined_score":null,"content_id":"6384c81c-095d-4218-b858-57e5721943a1","creator_id":"milestone3_ai_generated","guess":"unsure","label":"Placeholder: model signal only; no authorship label yet.","model_score":0.5106,"stage":"model_only","status":"decided","style_score":null,"timestamp":"2026-10-17T05:25:09+00:00"},{"combined_score":null,"content_id":"6111a423-63be-4f4d-84bf-6b4b1c764fff","creator_id":"milestone3_human_written","guess":"unsure","label":"Placeholder: model signal only; no authorship label yet.","model_score":0.5588,"stage":"model_only","status":"decided","style_score":null,"timestamp":"2026-10-17T05:25:09+00:00"}]}
+
+HTTP_STATUS=200
+
+CHECK: health
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' http://127.0.0.1:5000/health
+{"detector_loaded":true,"detector_model":"gpt2","log_entries":5,"ok":true,"rate_limiting":false}
+
+HTTP_STATUS=200
+
+PASS: 2 current curl submissions matched standalone scores and their audit entries; the model stayed loaded.
