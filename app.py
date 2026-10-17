@@ -31,6 +31,8 @@ from flask import Flask, jsonify, request
 import audit
 import config
 import detector
+import scoring
+import stylometry
 
 app = Flask(__name__)
 
@@ -156,7 +158,7 @@ def health():
 def submit():
     """
     Take a piece of text, decide about it, log the decision, answer.
-    Milestone 3 implemented; combined scoring and labels remain for 4 and 5.
+    Milestones 3–4 implemented; final labels remain for Milestone 5.
 
     Expects JSON:
         {"text": "...", "creator_id": "..."}
@@ -239,28 +241,30 @@ def submit():
     except ValueError as exc:
         return reject("text_too_short", str(exc), 422)
 
+    style_score = stylometry.style_signal(text)
+    confidence = scoring.combine_signals(model_score, style_score)
     content_id = str(uuid.uuid4())
-    # Milestone 3: no style signal, combined confidence, or final label yet.
+    # Milestone 4: real combined score; final authorship labels come in 5.
     guess = "unsure"
-    label = "Placeholder: model signal only; no authorship label yet."
+    label = "Placeholder: both signals scored; authorship labels pending."
     audit.log_decision(
         content_id=content_id,
         creator_id=creator_id,
         guess=guess,
         model_score=model_score,
-        style_score=None,
-        combined_score=None,
+        style_score=style_score,
+        combined_score=confidence,
         label=label,
         status="decided",
-        stage="model_only",
+        stage="combined_signals",
     )
     return jsonify({
         "content_id": content_id,
         "guess": guess,
-        "confidence": None,
+        "confidence": confidence,
         "label": label,
         "model_score": model_score,
-        "style_score": None,
+        "style_score": style_score,
         "status": "decided",
     }), 200
 

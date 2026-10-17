@@ -1,0 +1,3 @@
+{"confidence":0.5298,"content_id":"4b0829a4-657a-4dcc-91d0-386207565bac","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5106,"status":"decided","style_score":0.5489}
+
+HTTP_STATUS=200

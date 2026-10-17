@@ -1,0 +1,37 @@
+CHECK: submit_ai_generated
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_ai_generated_request.json'
+{"confidence":0.5298,"content_id":"4b0829a4-657a-4dcc-91d0-386207565bac","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5106,"status":"decided","style_score":0.5489}
+
+HTTP_STATUS=200
+
+CHECK: submit_human_written
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_human_written_request.json'
+{"confidence":0.5171,"content_id":"2504b041-8cdd-4484-a5a7-395bfe8bd175","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5588,"status":"decided","style_score":0.4753}
+
+HTTP_STATUS=200
+
+CHECK: submit_lightly_edited_ai
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_lightly_edited_ai_request.json'
+{"confidence":0.4721,"content_id":"3d7eedc9-f883-433b-8b32-c1a8a330e15c","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6166,"status":"decided","style_score":0.3276}
+
+HTTP_STATUS=200
+
+CHECK: submit_formal_human
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_formal_human_request.json'
+{"confidence":0.5302,"content_id":"02971b64-01d6-412e-afef-a61a74996c8e","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6103,"status":"decided","style_score":0.45}
+
+HTTP_STATUS=200
+
+CHECK: log
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' 'http://127.0.0.1:5000/log?limit=4'
+{"count":4,"entries":[{"combined_score":0.5298,"content_id":"4b0829a4-657a-4dcc-91d0-386207565bac","creator_id":"milestone4_ai_generated","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5106,"stage":"combined_signals","status":"decided","style_score":0.5489,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.5171,"content_id":"2504b041-8cdd-4484-a5a7-395bfe8bd175","creator_id":"milestone4_human_written","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5588,"stage":"combined_signals","status":"decided","style_score":0.4753,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.4721,"content_id":"3d7eedc9-f883-433b-8b32-c1a8a330e15c","creator_id":"milestone4_lightly_edited_ai","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6166,"stage":"combined_signals","status":"decided","style_score":0.3276,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.5302,"content_id":"02971b64-01d6-412e-afef-a61a74996c8e","creator_id":"milestone4_formal_human","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6103,"stage":"combined_signals","status":"decided","style_score":0.45,"timestamp":"2026-10-17T05:44:30+00:00"}]}
+
+HTTP_STATUS=200
+
+CHECK: health
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' http://127.0.0.1:5000/health
+{"detector_loaded":true,"detector_model":"gpt2","log_entries":9,"ok":true,"rate_limiting":false}
+
+HTTP_STATUS=200
+
+PASS: 4 real submissions matched standalone model/style scores and their combined-score audit records.

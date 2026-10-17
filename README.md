@@ -194,11 +194,26 @@ to 400 tokens, so it cannot assess changes beyond that window.
 
 ### Signal two — the style signal
 
-**What it measures:** The planned `stylometry.py::style_signal` uses sentence
-length variation (`sentence_length_spread`), unique words divided by total
-words (`type_token_ratio`), and punctuation relative to text length
-(`punctuation_density`). Their normalization, direction, and weights still
-need to be designed in Milestone 4;
+**What it measures:** Milestone 4's initial design measures sentence-length
+variation (`sentence_length_spread`), vocabulary variety (`type_token_ratio`),
+and punctuation density. The style score uses the first two, punctuation is
+reported for diagnosis without assuming that more punctuation identifies AI.
+
+**Style rule, written before implementation:** Count words in each nonempty
+sentence. Sentence spread is population standard deviation divided by mean
+sentence length. Convert it to `uniformity = 1 - min(spread, 1)`: zero spread
+means perfectly uniform lengths; a spread of 1 means the standard deviation
+equals the mean. Vocabulary variety is unique lowercase words divided by
+total words; convert it to `repetition = 1 - type_token_ratio`.
+Then `style_score = 0.5 * uniformity + 0.5 * repetition`, rounded to four
+decimal places. Both components are bounded to 0–1 and higher means more
+AI-like under these hypotheses. Fewer than two word-containing sentences
+returns the neutral score `0.5`, because sentence variation is unavailable.
+Raw empty-text vocabulary and punctuation ratios return zero without dividing
+by zero. Punctuation density counts Unicode punctuation characters divided
+by total characters, including whitespace. Curly apostrophes are normalized
+for word counting. These are initial engineering heuristics, not learned
+authorship boundaries.
 
 **Why that might differ between human and AI writing:** Generated prose may
 have more uniform sentence lengths and more repetitive wording, while human
@@ -217,26 +232,38 @@ longer, so length can masquerade as an authorship difference.
 <!-- Write the rule in words, then give the numbers. What happens when the two
      signals disagree? -->
 
-**The rule:** Still to be decided in Milestone 4. A weighted average is one
-candidate: `combined = w_model * model_score + w_style * style_score`, with
-nonnegative weights summing to 1. Giving the model more weight would require
-a reason grounded in its behavior (being a model does not make it a more
-reliable authorship signal by itself).
+**The rule, written before implementation:** The initial development
+rule is `combined = 0.5 * model_score + 0.5 * style_score`, rounded to four
+decimal places. Neither signal has earned greater trust. Giving them equal
+weight makes opposite readings such as `0.9` and `0.1` produce `0.5`, rather
+than allowing either signal alone to make a strong claim. This reduces the
+influence of either signal when they disagree, but it cannot prevent false
+accusations when both are wrong.
 
-**The numbers:** No final weights chosen. `config.py` currently supplies
-placeholder weights of `0.5` and `0.5`; these are used only in the hypothetical
-false-positive trace above. Cutoffs of `0.35` and `0.65` are also starter
-placeholders, not a completed threshold decision.
+**The numbers:** Initial weights: model `0.5`, style `0.5`. The style
+components also have equal weights of `0.5` each; these settings live in
+`config.py`. Signal values must be finite and within 0–1, weights must be
+finite, nonnegative, and sum to 1. Cutoffs of `0.35` and `0.65` remain starter
+placeholders for Milestone 5. This milestone computes confidence but keeps
+`guess` and label text explicitly temporary. Confidence means the combined
+AI-likeness score, not a measured probability of AI authorship.
 
 **Where it lives:** `scoring.py::combine_signals`
 
 <!-- ⚠️ The grader checks your code against that line. If your rule lives
      somewhere else, say where. -->
 
-**A case where my two signals split, and what my rule does with it:** No real
-case measured yet. As arithmetic only, scores of `0.9` and `0.1` give `0.5`
-under equal weights, which would fall in the starter's `unsure` band. A real
-disagreement example will be recorded after Milestone 4 calibration.
+**A case where my two signals split, and what my rule does with it:** On the
+lightly edited AI passage, the standalone model score was `0.6166` and the
+style score was `0.3276`. Sentence spread was `0.3793103448275862` and
+type-token ratio was `0.9655172413793104`: varied sentence lengths and almost
+all-unique words lower this style heuristic despite the supplied AI origin.
+The equal-weight arithmetic gives `0.4721`, inside the starter's unsure band.
+Using `0.5` as a diagnostic midpoint, the signals lean in opposite directions,
+this midpoint comparison is not a final label decision. Their disagreement
+is a reason for caution, not evidence that editing made the writing human.
+The original unedited AI passage was not supplied, so this is not a measured
+before/after editing effect. Exact calibration output is under **Sample Run**.
 
 
 
@@ -269,11 +296,12 @@ disagreement example will be recorded after Milestone 4 calibration.
 ### Milestone 3 — one signal, development checks
 
 The criteria were already committed at `3d4490b` before these checks.
-The current route uses only `detector.model_signal`: `confidence` and
-`style_score` are `null`, `guess` is the temporary value `unsure`, and the
-label explicitly identifies the model-only stage. No threshold-based label
-or combined score is produced yet. The response contract above describes
-the later completed service. `/appeal` is still the Milestone 5 stub.
+At the Milestone 3 checkpoint, the route used only `detector.model_signal`:
+`confidence` and `style_score` were `null`, `guess` was temporarily `unsure`,
+and the label explicitly identified the model-only stage. The captured output
+below preserves that checkpoint. The Milestone 4 section later in this sample
+run documents the current route with both signals and a combined confidence.
+Final labels and `/appeal` remain the Milestone 5 task.
 
 The server was run without the reloader for these checks:
 
@@ -429,6 +457,223 @@ OK
 These checks verify route behavior with a controlled model result. The curl
 transcript above separately exercises the real model. Neither is a formal
 verdict on the five acceptance criteria.
+
+---
+
+### Milestone 4 — both signals and combined confidence
+
+**Claim:** The style signal ran on its own before route wiring. Both signals
+were then run on the same three comparison inputs: the retained AI paragraph,
+the human passage, and the lightly edited AI passage. The formal
+human passage was the fourth calibration input. Four live curl submissions
+subsequently returned those same scores and their equal-weight combination,
+with matching audit entries.
+**Location:** `stylometry.py::sentence_length_spread`,
+`stylometry.py::type_token_ratio`, `stylometry.py::punctuation_density`,
+`stylometry.py::style_signal`, `detector.py::model_signal`,
+`scoring.py::combine_signals`, `app.py::submit`, and `audit.py::log_decision`.
+
+The combining rule was written in **Signals and Scoring** before code changes.
+The style components use `0.5` uniformity and `0.5` repetition. Model settings,
+weights, and the unchanged starter label cutoffs are saved in
+[config_snapshot.json](results/milestone4/config_snapshot.json).
+These are development/calibration checks, not the formal evaluation of
+`criteria.md`. No acceptance targets or thresholds were changed afterward.
+
+All four exact texts and their source notes are saved in
+[inputs.json](results/milestone4/inputs.json). The two new passages were used
+verbatim, including the edited-AI line break and the formal passage's initial
+word `merging`. Earlier withdrawn chat text was not reused. The edited AI
+input now supplies a third comparison case. Its unedited original was not supplied, so this
+is not a controlled measurement of editing's effect.
+
+| Development input | Model score | Style score | Combined `confidence` |
+|---|---|---|---|
+| ai_generated | 0.5106 | 0.5489 | 0.5298 |
+| human_written | 0.5588 | 0.4753 | 0.5171 |
+| lightly_edited_ai | 0.6166 | 0.3276 | 0.4721 |
+| formal_human | 0.6103 | 0.4500 | 0.5302 |
+
+For the three comparison inputs, using `0.5` only as a diagnostic midpoint:
+model and style both lean AI-like for `ai_generated`, they lean in opposite
+directions for `human_written` and `lightly_edited_ai`. Their numerical
+scores are the evidence, these midpoint descriptions are not final labels.
+The edited AI case is the largest split, explained in **Signals and Scoring**.
+The formal human case also splits: model `0.6103`, style `0.4500`, combined
+`0.5302`. Formality did not make this particular human passage unpredictable
+to GPT-2, the scores do not establish a general rule about formal writing.
+
+All four combined scores are near the middle (`0.4721`–`0.5302`). Under the
+unchanged starter cutoffs they would all fall in the unsure band. They do
+not demonstrate label coverage or reliable separation by authorship.
+The route still returns a temporary `guess: "unsure"` and an explicit
+placeholder label until Milestone 5 implements final label mapping,
+`confidence` is now the real combined AI-likeness score, not label certainty.
+
+#### Exact standalone output
+
+Each invocation's actual argument list, stdout, and stderr is saved in
+[standalone_signals.txt](results/milestone4/standalone_signals.txt).
+The following stdout is pasted from those runs:
+
+**ai_generated — stylometry.py**
+
+```text
+7 sentences, 104 words
+
+sentence_length_spread   0.25800784355766804
+type_token_ratio         0.6442307692307693
+punctuation_density      0.01485148514851485
+style_signal             0.5489   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+```
+
+**ai_generated — detector.py**
+
+```text
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     43.8
+model_signal   0.5106   (higher = more likely AI)
+```
+
+**human_written — stylometry.py**
+
+```text
+3 sentences, 54 words
+
+sentence_length_spread   0.32710225430843876
+type_token_ratio         0.7222222222222222
+punctuation_density      0.01838235294117647
+style_signal             0.4753   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+```
+
+**human_written — detector.py**
+
+```text
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     38.8
+model_signal   0.5588   (higher = more likely AI)
+```
+
+**lightly_edited_ai — stylometry.py**
+
+```text
+2 sentences, 29 words
+
+sentence_length_spread   0.3793103448275862
+type_token_ratio         0.9655172413793104
+punctuation_density      0.031088082901554404
+style_signal             0.3276   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+```
+
+**lightly_edited_ai — detector.py**
+
+```text
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     33.4
+model_signal   0.6166   (higher = more likely AI)
+```
+
+**formal_human — stylometry.py**
+
+```text
+2 sentences, 40 words
+
+sentence_length_spread   0.15
+type_token_ratio         0.95
+punctuation_density      0.023333333333333334
+style_signal             0.45   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+```
+
+**formal_human — detector.py**
+
+```text
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     34.0
+model_signal   0.6103   (higher = more likely AI)
+```
+
+#### Exact live HTTP output and audit records
+
+The curl request files are saved beside this transcript in
+[results/milestone4](results/milestone4). They contain the texts from
+`inputs.json` and the creator IDs shown in the audit entries. The loopback
+server used the same no-reloader command as Milestone 3 and the existing
+cached model in offline mode.
+
+```text
+CHECK: submit_ai_generated
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_ai_generated_request.json'
+{"confidence":0.5298,"content_id":"4b0829a4-657a-4dcc-91d0-386207565bac","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5106,"status":"decided","style_score":0.5489}
+
+HTTP_STATUS=200
+
+CHECK: submit_human_written
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_human_written_request.json'
+{"confidence":0.5171,"content_id":"2504b041-8cdd-4484-a5a7-395bfe8bd175","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5588,"status":"decided","style_score":0.4753}
+
+HTTP_STATUS=200
+
+CHECK: submit_lightly_edited_ai
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_lightly_edited_ai_request.json'
+{"confidence":0.4721,"content_id":"3d7eedc9-f883-433b-8b32-c1a8a330e15c","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6166,"status":"decided","style_score":0.3276}
+
+HTTP_STATUS=200
+
+CHECK: submit_formal_human
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone4/submit_formal_human_request.json'
+{"confidence":0.5302,"content_id":"02971b64-01d6-412e-afef-a61a74996c8e","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6103,"status":"decided","style_score":0.45}
+
+HTTP_STATUS=200
+
+CHECK: log
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' 'http://127.0.0.1:5000/log?limit=4'
+{"count":4,"entries":[{"combined_score":0.5298,"content_id":"4b0829a4-657a-4dcc-91d0-386207565bac","creator_id":"milestone4_ai_generated","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5106,"stage":"combined_signals","status":"decided","style_score":0.5489,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.5171,"content_id":"2504b041-8cdd-4484-a5a7-395bfe8bd175","creator_id":"milestone4_human_written","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.5588,"stage":"combined_signals","status":"decided","style_score":0.4753,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.4721,"content_id":"3d7eedc9-f883-433b-8b32-c1a8a330e15c","creator_id":"milestone4_lightly_edited_ai","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6166,"stage":"combined_signals","status":"decided","style_score":0.3276,"timestamp":"2026-10-17T05:44:30+00:00"},{"combined_score":0.5302,"content_id":"02971b64-01d6-412e-afef-a61a74996c8e","creator_id":"milestone4_formal_human","guess":"unsure","label":"Placeholder: both signals scored; authorship labels pending.","model_score":0.6103,"stage":"combined_signals","status":"decided","style_score":0.45,"timestamp":"2026-10-17T05:44:30+00:00"}]}
+
+HTTP_STATUS=200
+
+CHECK: health
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' http://127.0.0.1:5000/health
+{"detector_loaded":true,"detector_model":"gpt2","log_entries":9,"ok":true,"rate_limiting":false}
+
+HTTP_STATUS=200
+
+PASS: 4 real submissions matched standalone model/style scores and their combined-score audit records.
+```
+
+The append-only [audit log](logs/audit.jsonl) retains earlier model-only
+entries and adds these four with `stage: "combined_signals"`. Each new entry
+contains `model_score`, `style_score`, and `combined_score`; the last equals
+the response's `confidence`. Raw readings are preserved before aggregation in
+[signal_readings.json](results/milestone4/signal_readings.json), and the live
+response values plus features are in
+[calibration_results.json](results/milestone4/calibration_results.json).
+
+#### Focused tests
+
+**Claim:** Twelve tests passed for feature direction and sparse input, scoring
+bounds and invalid weights, and route-to-audit consistency of both scores and
+combined confidence. The route tests mock the signals, the curl checks above
+separately exercise the real signals.
+**Location:** `tests/test_stylometry.py::StylometryTests`,
+`tests/test_scoring.py::ScoringTests`, and `tests/test_submit.py::SubmitTests`.
+
+Command: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+Exact summary excerpt from the test run:
+
+```text
+----------------------------------------------------------------------
+Ran 12 tests in 0.034s
+
+OK
+```
 
 ---
 

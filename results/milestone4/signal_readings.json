@@ -1,0 +1,38 @@
+[
+  {
+    "name": "ai_generated",
+    "sentence_length_spread": 0.25800784355766804,
+    "type_token_ratio": 0.6442307692307693,
+    "punctuation_density": 0.01485148514851485,
+    "style_signal": 0.5489,
+    "perplexity": 43.8,
+    "model_signal": 0.5106
+  },
+  {
+    "name": "human_written",
+    "sentence_length_spread": 0.32710225430843876,
+    "type_token_ratio": 0.7222222222222222,
+    "punctuation_density": 0.01838235294117647,
+    "style_signal": 0.4753,
+    "perplexity": 38.8,
+    "model_signal": 0.5588
+  },
+  {
+    "name": "lightly_edited_ai",
+    "sentence_length_spread": 0.3793103448275862,
+    "type_token_ratio": 0.9655172413793104,
+    "punctuation_density": 0.031088082901554404,
+    "style_signal": 0.3276,
+    "perplexity": 33.4,
+    "model_signal": 0.6166
+  },
+  {
+    "name": "formal_human",
+    "sentence_length_spread": 0.15,
+    "type_token_ratio": 0.95,
+    "punctuation_density": 0.023333333333333334,
+    "style_signal": 0.45,
+    "perplexity": 34.0,
+    "model_signal": 0.6103
+  }
+]

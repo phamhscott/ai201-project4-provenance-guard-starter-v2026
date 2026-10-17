@@ -53,12 +53,14 @@ DETECTOR_MAX_TOKENS = 400
 # ─── Scoring (Milestone 4) ───────────────────────────────────────────────────
 # How much each signal counts toward the combined score.
 #
-# ⚠️ These are placeholders. Milestone 4 asks you to write your combining rule
-# down BEFORE you code it, and to put the numbers in your README. Whatever you
-# decide, it goes here.
+# Milestone 4:  The README records the rule before its implementation and results.
 
 WEIGHT_MODEL_SIGNAL = 0.5
 WEIGHT_STYLE_SIGNAL = 0.5
+
+# Style components: both are normalized to 0–1, higher = more AI-like.
+WEIGHT_SENTENCE_UNIFORMITY = 0.5
+WEIGHT_VOCABULARY_REPETITION = 0.5
 
 
 # ─── Thresholds (Milestone 5) ────────────────────────────────────────────────

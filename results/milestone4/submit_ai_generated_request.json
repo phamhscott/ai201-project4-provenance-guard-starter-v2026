@@ -1,0 +1,4 @@
+{
+  "text": "A submission begins when a user sends text and a creator identifier to the service. The service checks that both fields are present and valid. It then gives the submission a unique content identifier. A local language model measures how predictable the text is, and a separate style signal measures patterns in the writing. The two signals are combined into a score that determines the label shown to the reader. The service records the decision in an audit log so it can be reviewed later. If the writer disagrees with the result, they can submit an appeal using the content identifier and an explanation.",
+  "creator_id": "milestone4_ai_generated"
+}

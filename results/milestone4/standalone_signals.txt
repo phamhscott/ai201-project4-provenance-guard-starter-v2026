@@ -1,0 +1,107 @@
+SAMPLE: ai_generated | MODULE: stylometry.py
+SOURCE: AI-generated development paragraph retained from Milestone 3. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "stylometry.py", "A submission begins when a user sends text and a creator identifier to the service. The service checks that both fields are present and valid. It then gives the submission a unique content identifier. A local language model measures how predictable the text is, and a separate style signal measures patterns in the writing. The two signals are combined into a score that determines the label shown to the reader. The service records the decision in an audit log so it can be reviewed later. If the writer disagrees with the result, they can submit an appeal using the content identifier and an explanation."]
+EXIT_CODE: 0
+STDOUT:
+7 sentences, 104 words
+
+sentence_length_spread   0.25800784355766804
+type_token_ratio         0.6442307692307693
+punctuation_density      0.01485148514851485
+style_signal             0.5489   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+STDERR:
+
+
+SAMPLE: ai_generated | MODULE: detector.py
+SOURCE: AI-generated development paragraph retained from Milestone 3. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "detector.py", "A submission begins when a user sends text and a creator identifier to the service. The service checks that both fields are present and valid. It then gives the submission a unique content identifier. A local language model measures how predictable the text is, and a separate style signal measures patterns in the writing. The two signals are combined into a score that determines the label shown to the reader. The service records the decision in an audit log so it can be reviewed later. If the writer disagrees with the result, they can submit an appeal using the content identifier and an explanation."]
+EXIT_CODE: 0
+STDOUT:
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     43.8
+model_signal   0.5106   (higher = more likely AI)
+STDERR:
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+
+SAMPLE: human_written | MODULE: stylometry.py
+SOURCE: Identified as human-written in the prior turn; used verbatim. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "stylometry.py", "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers."]
+EXIT_CODE: 0
+STDOUT:
+3 sentences, 54 words
+
+sentence_length_spread   0.32710225430843876
+type_token_ratio         0.7222222222222222
+punctuation_density      0.01838235294117647
+style_signal             0.4753   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+STDERR:
+
+
+SAMPLE: human_written | MODULE: detector.py
+SOURCE: Identified as human-written in the prior turn; used verbatim. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "detector.py", "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers."]
+EXIT_CODE: 0
+STDOUT:
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     38.8
+model_signal   0.5588   (higher = more likely AI)
+STDERR:
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+
+SAMPLE: lightly_edited_ai | MODULE: stylometry.py
+SOURCE: Lightly edited AI text for Milestone 4; used verbatim, including the line break. The unedited original was not supplied, so this check cannot isolate the effect of editing. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "stylometry.py", "Technology should make our lives easier, not more complicated.\nWhen businesses choose the right tools, real work gets done faster, teams feel less stressed, and customers notice the difference."]
+EXIT_CODE: 0
+STDOUT:
+2 sentences, 29 words
+
+sentence_length_spread   0.3793103448275862
+type_token_ratio         0.9655172413793104
+punctuation_density      0.031088082901554404
+style_signal             0.3276   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+STDERR:
+
+
+SAMPLE: lightly_edited_ai | MODULE: detector.py
+SOURCE: Lightly edited AI text for Milestone 4; used verbatim, including the line break. The unedited original was not supplied, so this check cannot isolate the effect of editing. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "detector.py", "Technology should make our lives easier, not more complicated.\nWhen businesses choose the right tools, real work gets done faster, teams feel less stressed, and customers notice the difference."]
+EXIT_CODE: 0
+STDOUT:
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     33.4
+model_signal   0.6166   (higher = more likely AI)
+STDERR:
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+
+SAMPLE: formal_human | MODULE: stylometry.py
+SOURCE: Formal human text for Milestone 4; used verbatim, including the initial word merging. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "stylometry.py", "merging research indicates a positive correlation between sustained engagement in strategic video games and the development of enhanced problem-solving skills in adolescents. These cognitive benefits are attributed to the complex, multi-step challenges that require rapid, analytical decision-making."]
+EXIT_CODE: 0
+STDOUT:
+2 sentences, 40 words
+
+sentence_length_spread   0.15
+type_token_ratio         0.95
+punctuation_density      0.023333333333333334
+style_signal             0.45   (higher = more likely AI)
+
+Style uses sentence uniformity and vocabulary repetition; punctuation is diagnostic only.
+STDERR:
+
+
+SAMPLE: formal_human | MODULE: detector.py
+SOURCE: Formal human text for Milestone 4; used verbatim, including the initial word merging. Not a formal evaluation sample.
+ARGV: [".venv\\Scripts\\python.exe", "detector.py", "merging research indicates a positive correlation between sustained engagement in strategic video games and the development of enhanced problem-solving skills in adolescents. These cognitive benefits are attributed to the complex, multi-step challenges that require rapid, analytical decision-making."]
+EXIT_CODE: 0
+STDOUT:
+Loading gpt2 (first run downloads ~550 MB)…
+perplexity     34.0
+model_signal   0.6103   (higher = more likely AI)
+STDERR:
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.

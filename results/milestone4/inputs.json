@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ai_generated",
+    "source": "AI-generated development paragraph retained from Milestone 3. Not a formal evaluation sample.",
+    "text": "A submission begins when a user sends text and a creator identifier to the service. The service checks that both fields are present and valid. It then gives the submission a unique content identifier. A local language model measures how predictable the text is, and a separate style signal measures patterns in the writing. The two signals are combined into a score that determines the label shown to the reader. The service records the decision in an audit log so it can be reviewed later. If the writer disagrees with the result, they can submit an appeal using the content identifier and an explanation."
+  },
+  {
+    "name": "human_written",
+    "source": "Identified as human-written in the prior turn; used verbatim. Not a formal evaluation sample.",
+    "text": "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers."
+  },
+  {
+    "name": "lightly_edited_ai",
+    "source": "Lightly edited AI text for Milestone 4; used verbatim, including the line break. The unedited original was not supplied, so this check cannot isolate the effect of editing. Not a formal evaluation sample.",
+    "text": "Technology should make our lives easier, not more complicated.\nWhen businesses choose the right tools, real work gets done faster, teams feel less stressed, and customers notice the difference."
+  },
+  {
+    "name": "formal_human",
+    "source": "Formal human text for Milestone 4; used verbatim, including the initial word merging. Not a formal evaluation sample.",
+    "text": "merging research indicates a positive correlation between sustained engagement in strategic video games and the development of enhanced problem-solving skills in adolescents. These cognitive benefits are attributed to the complex, multi-step challenges that require rapid, analytical decision-making."
+  }
+]

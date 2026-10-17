@@ -10,6 +10,7 @@ import app
 import audit
 import config
 import detector
+import stylometry
 
 
 class SubmitTests(unittest.TestCase):
@@ -19,6 +20,7 @@ class SubmitTests(unittest.TestCase):
         self.enterContext(patch.object(config, "LOG_DIR", log_dir))
         self.enterContext(patch.object(config, "AUDIT_LOG", log_dir / "audit.jsonl"))
         self.signal = self.enterContext(patch.object(detector, "model_signal"))
+        self.style = self.enterContext(patch.object(stylometry, "style_signal", return_value=0.23))
         self.client = app.app.test_client()
 
     def test_score_and_identifiers_survive_response_and_audit_log(self):
@@ -34,16 +36,19 @@ class SubmitTests(unittest.TestCase):
         self.assertEqual(len(entries), 2)
         self.assertEqual(self.signal.call_count, 2)
         self.signal.assert_called_with(text)
+        self.style.assert_called_with(text)
+        self.assertEqual(self.style.call_count, 2)
         for body, entry in zip(bodies, entries):
             self.assertEqual(str(uuid.UUID(body["content_id"])), body["content_id"])
             self.assertEqual(entry["content_id"], body["content_id"])
             self.assertEqual(entry["creator_id"], "test_writer")
             self.assertEqual(entry["model_score"], body["model_score"])
             self.assertEqual(body["model_score"], 0.73)
-            self.assertIsNone(body["confidence"])
-            self.assertIsNone(body["style_score"])
-            self.assertIsNone(entry["combined_score"])
-            self.assertEqual(entry["stage"], "model_only")
+            self.assertEqual(body["confidence"], 0.48)
+            self.assertEqual(body["style_score"], 0.23)
+            self.assertEqual(entry["style_score"], body["style_score"])
+            self.assertEqual(entry["combined_score"], body["confidence"])
+            self.assertEqual(entry["stage"], "combined_signals")
             self.assertEqual(entry["status"], body["status"])
             self.assertEqual(entry["guess"], body["guess"])
             self.assertEqual(entry["label"], body["label"])
@@ -65,6 +70,7 @@ class SubmitTests(unittest.TestCase):
         malformed = self.client.post("/submit", data="{", content_type="application/json")
         self.assertEqual(malformed.status_code, 400)
         self.signal.assert_not_called()
+        self.style.assert_not_called()
         entries = audit.read_entries()
         self.assertEqual(len(entries), len(cases) + 1)
         self.assertTrue(all(entry["status"] == "rejected" for entry in entries))
@@ -90,6 +96,7 @@ class SubmitTests(unittest.TestCase):
                 self.assertEqual(response.get_json()["error"], code)
                 self.assertNotIn("model_score", response.get_json())
         self.assertTrue(all(entry["status"] == "rejected" for entry in audit.read_entries()))
+        self.style.assert_not_called()
 
 
 if __name__ == "__main__":

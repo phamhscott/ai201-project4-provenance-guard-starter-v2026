@@ -2,7 +2,8 @@
 Turning two numbers into one, and one number into something a person can read.
 ← YOU BUILD THIS IN MILESTONES 4 AND 5
 
-Two functions live here, and both are stubs.
+The combining rule is implemented for Milestone 4. Label wording and mapping
+remain the Milestone 5 task.
 
 `combine_signals` is where your false-positive decision from Milestone 1
 actually gets made. Everything above it — the labels, the appeal path — is
@@ -16,12 +17,14 @@ function holding your combining rule. The grader checks your code against what
 you claim, so that line should read `scoring.py::combine_signals`.
 """
 
+import math
+
 import config
 
 
 def combine_signals(model_score: float, style_score: float) -> float:
     """
-    Combine two 0–1 signals into one 0–1 score. ← TODO (Milestone 4)
+    Combine two 0–1 AI-likeness signals with the documented config weights.
 
     Both inputs point the same way: higher means more likely AI. Your output
     should too.
@@ -31,7 +34,7 @@ def combine_signals(model_score: float, style_score: float) -> float:
         style_score: from `stylometry.style_signal` — the shape of the text.
 
     Returns:
-        A float from 0.0 (confidently human) to 1.0 (confidently AI).
+        A float from 0.0 (low AI-likeness) to 1.0 (high AI-likeness).
 
     ⚠️ **Write the rule down before you code it, and put the numbers in your
     README.** A weighted average is the obvious choice and it is not the only
@@ -49,13 +52,18 @@ def combine_signals(model_score: float, style_score: float) -> float:
       - Milestone 4 asks you to find a case where your two signals split and
         write it down. That case is what this rule exists to handle.
 
-    The weights in config.py are placeholders. Change them, or ignore them and
-    write a different rule.
     """
-    # TODO: replace this
-    return (
+    if not all(math.isfinite(value) and 0.0 <= value <= 1.0
+               for value in (model_score, style_score)):
+        raise ValueError("Signal scores must be finite numbers within 0–1.")
+    weights = (config.WEIGHT_MODEL_SIGNAL, config.WEIGHT_STYLE_SIGNAL)
+    if (not all(math.isfinite(weight) and weight >= 0.0 for weight in weights)
+            or not math.isclose(sum(weights), 1.0, rel_tol=0.0, abs_tol=1e-9)):
+        raise ValueError("Signal weights must be finite, nonnegative, and sum to 1.")
+    return round(
         config.WEIGHT_MODEL_SIGNAL * model_score
-        + config.WEIGHT_STYLE_SIGNAL * style_score
+        + config.WEIGHT_STYLE_SIGNAL * style_score,
+        4,
     )
 
 
