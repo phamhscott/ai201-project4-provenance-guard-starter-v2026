@@ -39,27 +39,36 @@
 <!-- The path a submission takes, from arriving to the label a reader sees.
      Six or seven steps — this is the trace you wrote in Milestone 1. -->
 
-**Milestone 1 Design / Trace**
+Provenance Guard assesses writing authorship (human or AI) using a
+language-model signal and a style signal. It returns a human, unsure, or AI
+label, saves the decision, and lets the writer challenge it through an appeal.
+
+
+**The submission path**
 
 1. A writer sends their writing as `text` and their identifier as `creator_id`
    to `POST /submit` in `app.py::submit`.
-2. The route checks the request before scoring it and creates a unique
-   `content_id`. This connects the decision, its audit record, and any later
-   appeal to the same submission.
+2. The route checks that the body is a JSON object, both required fields are
+   nonblank strings, and the text is at most 20,000 characters. Invalid input
+   receives a defined error instead of a classification.
 3. `detector.py::model_signal` measures how predictable the text is to the
    local language model. It returns `model_score` between 0 and 1, with higher
    scores meaning more AI-like according to this signal.
-4. `stylometry.py::style_signal` measures the text's structure: sentence-length
-   variation, vocabulary repetition, and punctuation density. It converts those
-   measurements into `style_score`, also between 0 and 1 in the same direction.
+4. `stylometry.py::style_signal` measures sentence-length variation and
+   vocabulary repetition and converts them into `style_score`, also between
+   0 and 1 with higher meaning more AI-like. Punctuation density is computed
+   separately for diagnosis and does not contribute to this score.
 5. `scoring.py::combine_signals` combines the two scores using a documented
-   rule. This produces one combined score. The rule and weights are a design
-   choice that will require some more thought.
+   rule: `0.5 * model_score + 0.5 * style_score`, rounded to four decimal
+   places. The route then creates a unique `content_id` to connect the
+   response, audit record, and any later appeal.
 6. `scoring.py::score_to_label` maps that score to `human`, `unsure`, or `ai`
    and a full sentence for the reader. `audit.py::log_decision` records the
    identifiers, both signals, the combined score, the guess, the label, a
    timestamp, and the initial status `decided` before the route returns them.
-7. The caller displays the returned label to the reader. If the writer disputes
+7. The route returns `content_id`, `guess`, `confidence`, `label`, both signal
+   scores, and `status`. The caller can display the label to the reader.
+   If the writer disputes
    it, they send the `content_id` and their explanation to `POST /appeal`.
    `app.py::appeal` finds the original submission and calls
    `audit.py::log_appeal` to append an `under_review` event. The response confirms
@@ -72,15 +81,15 @@ common words and short, similarly sized sentences. The model might find it
 predictable, while the style rules might find it unusually uniform. These are
 overlapping blind spots where the two signals agreeing would not prove authorship.
 
-For an arithmetic example only, suppose `model_score = 0.90` and
-`style_score = 0.70`. With the starter's placeholder equal weights, the
-combined score would be `0.80`. With its placeholder AI cutoff of `0.65`, the
-guess would be `ai`. A proposed reader-facing label for this example is:
+For a hypothetical arithmetic example, suppose `model_score = 0.90` and
+`style_score = 0.70`. The equal-weight combining rule produces `0.80`.
+With the current AI cutoff of `0.65`, the guess would be `ai`, and the exact
+reader-facing label would be:
 "Our signals suggest this text may be AI-generated. This assessment can be
-wrong. If you wrote it, you can request a review."
+wrong. You can request a review if you disagree."
 
 The writer can appeal using the returned `content_id` and explain how they
-wrote the paragraph, mentioning drafts or notes if available. The planned
+wrote the paragraph, mentioning drafts or notes if available. The
 endpoint accepts an explanation as text, it does not upload or verify that
 supporting material. The appeal response says `under_review`, and the audit
 log retains both the original decision and the later challenge. Recording an
@@ -90,7 +99,7 @@ This example is a reason to examine a wider `unsure` band before making a
 strong AI claim. That could reduce false accusations while letting more AI
 writing avoid the AI label.
 
-### Proposed endpoint contracts
+### Endpoint contracts
 
 Both endpoints accept `Content-Type: application/json` with a JSON object and return JSON.
 Required strings must contain something other than whitespace. Validate with
@@ -116,13 +125,13 @@ Successful response: **HTTP 200**.
 | `style_score` | number, 0–1 | The style rules' AI-likeness signal. |
 | `confidence` | number, 0–1 | The combined AI-likeness score, equal to `combined_score` in the audit log. Higher means more AI-like. This is not a verified probability or certainty in the selected label. |
 | `guess` | string enum | Exactly `human`, `unsure`, or `ai`, according to the combined score's label range. |
-| `label` | string | The complete reader-facing sentence for that guess. Final wording will be documented in **Label Variants**. |
+| `label` | string | The complete reader-facing sentence for that guess, written out in **Label Variants**. |
 | `status` | string | Initially `decided`. This records that a decision was made, not that it is correct. |
 
 The combined score must be finite and within 0–1. Label ranges must cover
 that whole interval without gaps or overlapping boundary assignments.
 
-Proposed errors use `{"error": "<code>", "message": "<explanation>"}`:
+Errors use `{"error": "<code>", "message": "<explanation>"}`:
 
 | HTTP status | `error` | When |
 |---|---|---|
@@ -132,7 +141,7 @@ Proposed errors use `{"error": "<code>", "message": "<explanation>"}`:
 | 503 | `detector_unavailable` | The local model cannot load. Return an error rather than inventing a score. |
 
 The character limit is the agreed input bound, not the model's reading window:
-the starter detector reads at most 400 tokens, while the planned style signal
+the starter detector reads at most 400 tokens, while the style signal
 measures the whole accepted text. An accepted long submission therefore does
 not mean the model assessed every word. Rate-limit errors are added in Unit 8.
 
@@ -824,15 +833,47 @@ OK
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help choosing development examples to run through the
+  detector and comparing AI-generated and human-written text.
+- *What came back:* AI supplied AI-generated passages and development
+  probes. It also initially reused an excerpt from my earlier chat explanation
+  as the human example and used that excerpt in a mixed example. Those were
+  not the human test passages I had selected.
+- *What I changed:* I asked AI to remove the chat-derived sample text and
+  supplied the human passage I wanted to use. I later supplied formal human
+  writing and lightly edited AI text for the four-input calibration check.
+  The replacement passages were used verbatim, and the replacement runs were
+  recorded separately from the original development sequence.
+- *How it was checked:* AI reran the supplied human passage through the
+  standalone detector and `/submit`, then refreshed the requests, responses,
+  and README evidence. The selected inputs and source notes are saved in
+  `results/milestone3/detector_inputs.json` and
+  `results/milestone4/inputs.json`. The withdrawn chat text is not retained in
+  those sample files or their command transcripts. Earlier audit entries
+  contain decision metadata rather than the submitted text.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help designing the endpoint contracts and the steps a
+  submission and appeal should follow, then help with their initial
+  implementation.
+- *What came back:* AI helped turn the flow we discussed into request
+  validation, signal calls, score combination, label mapping, audit logging,
+  and an appeal linked by `content_id`. It also proposed and created separate
+  test modules for the endpoints and scoring behavior.
+- *What I changed:* I kept the endpoint flow we designed together and retained
+  the separate test modules. I chose equal starting weights for the two signals
+  and a 20,000-character input maximum. AI wrote the initial implementation
+  and tests.
+- *How it was checked:* AI ran the focused tests and real curl requests.
+  The saved Milestone 5 run shows all three labels reached through `/submit`
+  and a real appeal confirmed as `under_review` in `/log`, with the original
+  decision unchanged. The tests are in `tests/test_submit.py`,
+  `tests/test_appeal.py`, `tests/test_scoring.py`, and `tests/test_stylometry.py`.
+  The requests and responses are preserved under **Sample Run** and in
+  `results/milestone5/`. One AI-generated probe received the human label, so
+  these checks establish working routes and reachable labels rather than
+  reliable authorship detection.
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
