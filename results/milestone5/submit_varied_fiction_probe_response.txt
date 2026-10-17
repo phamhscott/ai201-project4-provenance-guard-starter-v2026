@@ -1,0 +1,3 @@
+{"confidence":0.0537,"content_id":"19f3b20e-822a-4afa-938c-0814af751bbc","guess":"human","label":"Our signals suggest this was probably written by a person. This assessment can be wrong.","model_score":0.0955,"status":"decided","style_score":0.0119}
+
+HTTP_STATUS=200

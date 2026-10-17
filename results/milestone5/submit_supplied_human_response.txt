@@ -1,0 +1,3 @@
+{"confidence":0.5171,"content_id":"0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8","guess":"unsure","label":"Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.","model_score":0.5588,"status":"decided","style_score":0.4753}
+
+HTTP_STATUS=200

@@ -243,10 +243,10 @@ accusations when both are wrong.
 **The numbers:** Initial weights: model `0.5`, style `0.5`. The style
 components also have equal weights of `0.5` each; these settings live in
 `config.py`. Signal values must be finite and within 0–1, weights must be
-finite, nonnegative, and sum to 1. Cutoffs of `0.35` and `0.65` remain starter
-placeholders for Milestone 5. This milestone computes confidence but keeps
-`guess` and label text explicitly temporary. Confidence means the combined
-AI-likeness score, not a measured probability of AI authorship.
+finite, nonnegative, and sum to 1. Milestone 5 retains the initial cutoffs of
+`0.35` and `0.65` and now maps the combined score to the exact labels below.
+Confidence means the combined AI-likeness score, not a measured probability
+of AI authorship.
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -278,16 +278,31 @@ before/after editing effect. Exact calibration output is under **Sample Run**.
 
 | Label | Score range | The exact text a reader sees |
 |---|---|---|
-| high-confidence human |  |  |
-| unsure |  |  |
-| high-confidence AI |  |  |
+| high-confidence human | `0 <= score <= 0.35` | Our signals suggest this was probably written by a person. This assessment can be wrong. |
+| unsure | `0.35 < score < 0.65` | Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree. |
+| high-confidence AI | `0.65 <= score <= 1` | Our signals suggest this text may be AI-generated. This assessment can be wrong. You can request a review if you disagree. |
 
-**Why I worded the "unsure" one this way:**
-<!-- It's the hardest of the three. It has to admit uncertainty without
-     sounding like an accusation, because the person reading it may well have
-     written every word themselves. -->
+**Why the unsure label is worded this way:** The uncertainty belongs to
+the detection methods, not to the writer’s honesty. The label explicitly
+avoids an accusation and offers a way to challenge the assessment.
+It does not require the writer to understand a score or a cutoff.
 
+These initial ranges retain `HUMAN_THRESHOLD = 0.35` and
+`AI_THRESHOLD = 0.65` in `config.py`, no numerical cutoff was changed for
+this milestone. The outer boundaries are inclusive and the middle is
+strictly between them, so every valid score maps to exactly one label.
+The assignment’s “high-confidence” variant names do not establish a
+statistical confidence level or prove authorship. The wording remains
+qualified because the signals can be wrong.
 
+**Location:** `scoring.py::score_to_label`, `scoring.py::LABEL_TEXT`, and
+`scoring.py::label_ranges`. Exact output of `label_ranges()`:
+
+```text
+high-confidence human: 0 <= score <= 0.35
+unsure: 0.35 < score < 0.65
+high-confidence AI: 0.65 <= score <= 1
+```
 
 ---
 
@@ -301,7 +316,7 @@ At the Milestone 3 checkpoint, the route used only `detector.model_signal`:
 and the label explicitly identified the model-only stage. The captured output
 below preserves that checkpoint. The Milestone 4 section later in this sample
 run documents the current route with both signals and a combined confidence.
-Final labels and `/appeal` remain the Milestone 5 task.
+Final labels and `/appeal` were added in Milestone 5, documented later in this sample run.
 
 The server was run without the reloader for these checks:
 
@@ -432,7 +447,7 @@ earlier development decision metadata, which contains no submitted text;
 later combined scores. `status: "decided"` means the model-only result was
 recorded, not that final authorship has been established.
 
-**Appeal sample:** Pending Milestone 5, when `/appeal` is implemented.
+**Appeal sample:** See the completed Milestone 5 sample below.
 
 #### Focused route checks
 
@@ -671,6 +686,134 @@ Exact summary excerpt from the test run:
 ```text
 ----------------------------------------------------------------------
 Ran 12 tests in 0.034s
+
+OK
+```
+
+---
+
+### Milestone 5 — reader labels and appeal path
+
+**Claim:** Three real `/submit` calls reached all three labels using the
+unchanged initial ranges. The supplied human passage was then appealed using
+its returned `content_id`. `/appeal` confirmed `under_review`, and `GET /log`
+showed the appended event with the original decision preserved.
+**Location:** `scoring.py::score_to_label`, `scoring.py::label_ranges`,
+`app.py::submit`, `app.py::appeal`, `audit.py::entries_for`,
+`audit.py::log_appeal`, and `app.py::get_log`.
+
+The exact texts and source notes are saved in
+[inputs.json](results/milestone5/inputs.json). The human input is the human passage, used verbatim. The other two are deliberately constructed
+AI-generated development probe, fiction with uneven sentence lengths and
+unusual vocabulary, and a repeated simple sentence. They demonstrate label
+reachability, not classifier accuracy. They are separate from the fixed
+formal evaluation samples in `criteria.md`.
+
+| Development input | Actual source | Model score | Style score | Combined score | Returned guess |
+|---|---|---|---|---|---|
+| varied_fiction_probe | AI-generated probe | 0.0955 | 0.0119 | 0.0537 | `human` |
+| supplied_human | Supplied as human-written | 0.5588 | 0.4753 | 0.5171 | `unsure` |
+| repetitive_ai_probe | AI-generated probe | 0.9947 | 0.9583 | 0.9765 | `ai` |
+
+The fiction probe is a **false negative**: AI-generated text received the
+human label. The original four calibration inputs still fall in the middle
+band. No cutoffs, signal weights, or scoring features were changed to turn
+these development checks into an accuracy claim or a formal criterion pass.
+
+The appeal explanation below is explicitly a development-check request,
+not a fabricated account of the writer’s drafting history. Exact request body:
+
+```json
+{
+  "content_id": "0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8",
+  "reasoning": "Milestone 5 development check: please review the assessment of this supplied human-written passage."
+}
+```
+
+The original entry was saved immediately before the appeal in
+[appealed_original_before.json](results/milestone5/appealed_original_before.json):
+
+```json
+{
+  "timestamp": "2026-10-17T06:05:12+00:00",
+  "content_id": "0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8",
+  "creator_id": "milestone5_supplied_human",
+  "guess": "unsure",
+  "model_score": 0.5588,
+  "style_score": 0.4753,
+  "combined_score": 0.5171,
+  "label": "Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.",
+  "status": "decided",
+  "stage": "labeled"
+}
+```
+
+The server ran with the same no-reloader command used in earlier milestones,
+using the cached detector offline. The actual curl arguments are rendered in
+PowerShell syntax below. Requests use saved UTF-8 JSON files; responses are
+pasted unchanged from captured stdout.
+
+```text
+CHECK: submit_varied_fiction_probe
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone5/submit_varied_fiction_probe_request.json'
+{"confidence":0.0537,"content_id":"19f3b20e-822a-4afa-938c-0814af751bbc","guess":"human","label":"Our signals suggest this was probably written by a person. This assessment can be wrong.","model_score":0.0955,"status":"decided","style_score":0.0119}
+
+HTTP_STATUS=200
+
+CHECK: submit_supplied_human
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone5/submit_supplied_human_request.json'
+{"confidence":0.5171,"content_id":"0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8","guess":"unsure","label":"Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.","model_score":0.5588,"status":"decided","style_score":0.4753}
+
+HTTP_STATUS=200
+
+CHECK: submit_repetitive_ai_probe
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/submit -H 'Content-Type: application/json' --data-binary '@results/milestone5/submit_repetitive_ai_probe_request.json'
+{"confidence":0.9765,"content_id":"22e00082-32ff-4e6b-bdb5-3ccb07ca0d45","guess":"ai","label":"Our signals suggest this text may be AI-generated. This assessment can be wrong. You can request a review if you disagree.","model_score":0.9947,"status":"decided","style_score":0.9583}
+
+HTTP_STATUS=200
+
+CHECK: appeal
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' -X POST http://127.0.0.1:5000/appeal -H 'Content-Type: application/json' --data-binary '@results/milestone5/appeal_request.json'
+{"content_id":"0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8","message":"Your appeal has been recorded. The submission is under review.","status":"under_review"}
+
+HTTP_STATUS=200
+
+CHECK: log
+$ curl.exe -sS --max-time 90 -w '\nHTTP_STATUS=%{http_code}\n' 'http://127.0.0.1:5000/log?limit=4'
+{"count":4,"entries":[{"combined_score":0.0537,"content_id":"19f3b20e-822a-4afa-938c-0814af751bbc","creator_id":"milestone5_varied_fiction_probe","guess":"human","label":"Our signals suggest this was probably written by a person. This assessment can be wrong.","model_score":0.0955,"stage":"labeled","status":"decided","style_score":0.0119,"timestamp":"2026-10-17T06:05:12+00:00"},{"combined_score":0.5171,"content_id":"0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8","creator_id":"milestone5_supplied_human","guess":"unsure","label":"Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.","model_score":0.5588,"stage":"labeled","status":"decided","style_score":0.4753,"timestamp":"2026-10-17T06:05:12+00:00"},{"combined_score":0.9765,"content_id":"22e00082-32ff-4e6b-bdb5-3ccb07ca0d45","creator_id":"milestone5_repetitive_ai_probe","guess":"ai","label":"Our signals suggest this text may be AI-generated. This assessment can be wrong. You can request a review if you disagree.","model_score":0.9947,"stage":"labeled","status":"decided","style_score":0.9583,"timestamp":"2026-10-17T06:05:13+00:00"},{"content_id":"0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8","creator_id":"milestone5_supplied_human","event":"appeal","reasoning":"Milestone 5 development check: please review the assessment of this supplied human-written passage.","status":"under_review","timestamp":"2026-10-17T06:05:13+00:00"}]}
+
+HTTP_STATUS=200
+
+PASS: all 3 labels reached with real text; a real submission was appealed, the log shows under_review, and prior audit records are unchanged.
+```
+
+The original entry still says `decided`. The later `appeal` event for the same
+`content_id` says `under_review` and represents the new status. The log is
+append-only: an appeal preserves the original scores, guess, label, creator,
+and timestamp. The response confirms receipt of the appeal; this project does
+not implement a reviewer, an automatic recheck, or an appeal-resolution step.
+
+All request/response files, the range output, and the weights/cutoffs snapshot
+are saved in [results/milestone5](results/milestone5). The audit entries are in
+[logs/audit.jsonl](logs/audit.jsonl). These are development checks, not the
+three-trial formal acceptance evaluation.
+
+#### Focused label and appeal tests
+
+**Claim:** Eighteen tests passed, including exact cutoff boundaries, rejection
+of invalid scores, label propagation into responses and decision logs, valid
+and repeated appeals, malformed request rejection, unknown IDs, and keeping
+the original decision intact. The appeal tests use real temporary audit files,
+no existing project log entries are modified by those tests.
+**Location:** `tests/test_scoring.py::ScoringTests`,
+`tests/test_submit.py::SubmitTests`, and `tests/test_appeal.py::AppealTests`.
+
+Command: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+Exact summary excerpt:
+
+```text
+----------------------------------------------------------------------
+Ran 18 tests in 0.068s
 
 OK
 ```

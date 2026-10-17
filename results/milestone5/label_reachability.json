@@ -1,0 +1,32 @@
+[
+  {
+    "name": "varied_fiction_probe",
+    "confidence": 0.0537,
+    "content_id": "19f3b20e-822a-4afa-938c-0814af751bbc",
+    "guess": "human",
+    "label": "Our signals suggest this was probably written by a person. This assessment can be wrong.",
+    "model_score": 0.0955,
+    "status": "decided",
+    "style_score": 0.0119
+  },
+  {
+    "name": "supplied_human",
+    "confidence": 0.5171,
+    "content_id": "0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8",
+    "guess": "unsure",
+    "label": "Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.",
+    "model_score": 0.5588,
+    "status": "decided",
+    "style_score": 0.4753
+  },
+  {
+    "name": "repetitive_ai_probe",
+    "confidence": 0.9765,
+    "content_id": "22e00082-32ff-4e6b-bdb5-3ccb07ca0d45",
+    "guess": "ai",
+    "label": "Our signals suggest this text may be AI-generated. This assessment can be wrong. You can request a review if you disagree.",
+    "model_score": 0.9947,
+    "status": "decided",
+    "style_score": 0.9583
+  }
+]

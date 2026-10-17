@@ -18,8 +18,8 @@ doesn't, it's the service itself.
 Routes:
 
     POST /ping        the worked example. Already works. Don't edit it
-    POST /submit      ← YOU BUILD THIS (Milestone 3, 4, 5)
-    POST /appeal      ← YOU BUILD THIS (Milestone 5)
+    POST /submit      score text, label it, and record the decision
+    POST /appeal      record a challenge and mark the item under review
     GET  /log         the audit log. Already works
     GET  /health      is the service up, and is the model loaded
 """
@@ -151,14 +151,14 @@ def health():
     })
 
 
-# ── YOU BUILD THIS ────────────────────────────────────────────────────────────
+# ── Submissions and appeals ───────────────────────────────────────────────────
 
 @app.post("/submit")
 # @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
     """
     Take a piece of text, decide about it, log the decision, answer.
-    Milestones 3–4 implemented; final labels remain for Milestone 5.
+    Milestones 3–5: two signals, combined confidence, reader label, and audit.
 
     Expects JSON:
         {"text": "...", "creator_id": "..."}
@@ -244,9 +244,7 @@ def submit():
     style_score = stylometry.style_signal(text)
     confidence = scoring.combine_signals(model_score, style_score)
     content_id = str(uuid.uuid4())
-    # Milestone 4: real combined score; final authorship labels come in 5.
-    guess = "unsure"
-    label = "Placeholder: both signals scored; authorship labels pending."
+    guess, label = scoring.score_to_label(confidence)
     audit.log_decision(
         content_id=content_id,
         creator_id=creator_id,
@@ -256,7 +254,7 @@ def submit():
         combined_score=confidence,
         label=label,
         status="decided",
-        stage="combined_signals",
+        stage="labeled",
     )
     return jsonify({
         "content_id": content_id,
@@ -272,7 +270,7 @@ def submit():
 @app.post("/appeal")
 def appeal():
     """
-    A writer says you got it wrong. ← TODO — Milestone 5
+    Record a challenge to an existing decision without overwriting that decision.
 
     Expects JSON:
         {"content_id": "...", "reasoning": "..."}
@@ -289,14 +287,44 @@ def appeal():
     to the person on the other end. It's the only thing standing between a
     wrong accusation and nothing at all.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({
+            "error": "invalid_request",
+            "message": "Send a JSON object with content_id and reasoning.",
+        }), 400
 
-    # TODO: delete this and build the route.
+    content_id = payload.get("content_id")
+    reasoning = payload.get("reasoning")
+    if not isinstance(content_id, str) or not content_id.strip():
+        return jsonify({
+            "error": "invalid_request",
+            "message": "content_id must be a nonblank string.",
+        }), 400
+    if not isinstance(reasoning, str) or not reasoning.strip():
+        return jsonify({
+            "error": "invalid_request",
+            "message": "reasoning must be a nonblank string.",
+        }), 400
+
+    # An earlier appeal or rejection alone cannot stand in for a submission.
+    original = next((
+        entry for entry in audit.entries_for(content_id)
+        if entry.get("status") == "decided" and entry.get("creator_id")
+    ), None)
+    if original is None:
+        return jsonify({
+            "error": "content_not_found",
+            "message": "No submission matches that content_id.",
+        }), 404
+
+    # The newest event carries current status; the original stays immutable.
+    audit.log_appeal(content_id, original["creator_id"], reasoning)
     return jsonify({
-        "error": "not_implemented",
-        "message": "POST /appeal isn't built yet — see the TODO in app.py.",
-        "you_sent": payload,
-    }), 501
+        "content_id": content_id,
+        "status": "under_review",
+        "message": "Your appeal has been recorded. The submission is under review.",
+    }), 200
 
 
 # ── Already works ─────────────────────────────────────────────────────────────

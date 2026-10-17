@@ -1,0 +1,3 @@
+high-confidence human: 0 <= score <= 0.35
+unsure: 0.35 < score < 0.65
+high-confidence AI: 0.65 <= score <= 1

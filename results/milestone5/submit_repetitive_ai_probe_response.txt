@@ -1,0 +1,3 @@
+{"confidence":0.9765,"content_id":"22e00082-32ff-4e6b-bdb5-3ccb07ca0d45","guess":"ai","label":"Our signals suggest this text may be AI-generated. This assessment can be wrong. You can request a review if you disagree.","model_score":0.9947,"status":"decided","style_score":0.9583}
+
+HTTP_STATUS=200

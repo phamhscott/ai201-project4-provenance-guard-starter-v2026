@@ -48,11 +48,13 @@ class SubmitTests(unittest.TestCase):
             self.assertEqual(body["style_score"], 0.23)
             self.assertEqual(entry["style_score"], body["style_score"])
             self.assertEqual(entry["combined_score"], body["confidence"])
-            self.assertEqual(entry["stage"], "combined_signals")
+            self.assertEqual(entry["stage"], "labeled")
             self.assertEqual(entry["status"], body["status"])
             self.assertEqual(entry["guess"], body["guess"])
             self.assertEqual(entry["label"], body["label"])
             self.assertIn("timestamp", entry)
+            self.assertEqual(body["guess"], "unsure")
+            self.assertNotIn("Placeholder", body["label"])
 
     def test_invalid_requests_are_rejected_before_the_model_runs(self):
         cases = [

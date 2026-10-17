@@ -2,8 +2,7 @@
 Turning two numbers into one, and one number into something a person can read.
 ← YOU BUILD THIS IN MILESTONES 4 AND 5
 
-The combining rule is implemented for Milestone 4. Label wording and mapping
-remain the Milestone 5 task.
+The combining rule and reader-facing label mapping are implemented.
 
 `combine_signals` is where your false-positive decision from Milestone 1
 actually gets made. Everything above it — the labels, the appeal path — is
@@ -20,6 +19,24 @@ you claim, so that line should read `scoring.py::combine_signals`.
 import math
 
 import config
+
+
+LABEL_TEXT = {
+    "human": (
+        "Our signals suggest this was probably written by a person. "
+        "This assessment can be wrong."
+    ),
+    "unsure": (
+        "Our signals cannot reliably tell whether this was written by a person or AI. "
+        "This is not an accusation of AI use. "
+        "You can request a review if you disagree."
+    ),
+    "ai": (
+        "Our signals suggest this text may be AI-generated. "
+        "This assessment can be wrong. "
+        "You can request a review if you disagree."
+    ),
+}
 
 
 def combine_signals(model_score: float, style_score: float) -> float:
@@ -70,7 +87,7 @@ def combine_signals(model_score: float, style_score: float) -> float:
 def score_to_label(score: float) -> tuple[str, str]:
     """
     Turn a score into a guess and the text a reader actually sees.
-    ← TODO (Milestone 5)
+    Scores at the outer cutoffs belong to the human and AI bands respectively.
 
     Returns:
         (guess, label_text) — where `guess` is a short machine-readable string
@@ -93,12 +110,15 @@ def score_to_label(score: float) -> tuple[str, str]:
     think if they got it on their own work. That question is the whole
     milestone.
     """
-    # TODO: replace this — thresholds are in config.py
+    if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+        raise ValueError("The combined score must be finite and within 0–1.")
+    if not 0.0 <= config.HUMAN_THRESHOLD < config.AI_THRESHOLD <= 1.0:
+        raise ValueError("Label cutoffs must satisfy 0 <= human < AI <= 1.")
     if score >= config.AI_THRESHOLD:
-        return "ai", "PLACEHOLDER — write the high-confidence AI label."
+        return "ai", LABEL_TEXT["ai"]
     if score <= config.HUMAN_THRESHOLD:
-        return "human", "PLACEHOLDER — write the high-confidence human label."
-    return "unsure", "PLACEHOLDER — write the unsure label."
+        return "human", LABEL_TEXT["human"]
+    return "unsure", LABEL_TEXT["unsure"]
 
 
 def label_ranges() -> list[tuple[str, str]]:
@@ -107,7 +127,7 @@ def label_ranges() -> list[tuple[str, str]]:
     label text — given to you so the numbers can't drift apart from config.py.
     """
     return [
-        ("high-confidence human", f"0.00 – {config.HUMAN_THRESHOLD:.2f}"),
-        ("unsure", f"{config.HUMAN_THRESHOLD:.2f} – {config.AI_THRESHOLD:.2f}"),
-        ("high-confidence AI", f"{config.AI_THRESHOLD:.2f} – 1.00"),
+        ("high-confidence human", f"0 <= score <= {config.HUMAN_THRESHOLD:g}"),
+        ("unsure", f"{config.HUMAN_THRESHOLD:g} < score < {config.AI_THRESHOLD:g}"),
+        ("high-confidence AI", f"{config.AI_THRESHOLD:g} <= score <= 1"),
     ]

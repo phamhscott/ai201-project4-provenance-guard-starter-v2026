@@ -1,0 +1,17 @@
+[
+  {
+    "name": "varied_fiction_probe",
+    "source": "Written by Codex as a development probe with uneven sentence lengths and unusual vocabulary. Known AI-generated origin; a human guess here demonstrates reachability and a false negative, not verified human authorship. Not a formal evaluation sample.",
+    "text": "Wait. Brass rain. Beneath splintered eaves, a clockmaker balanced quince peels beside an ossified teapot while violet moths embroidered the draught, each wingbeat interrupting her inventory of thimbles, invoices, borrowed umbrellas, and one inexplicably warm marble rescued yesterday from a frozen drain."
+  },
+  {
+    "name": "supplied_human",
+    "source": "The human passage, used verbatim as a development input. Not a formal evaluation sample.",
+    "text": "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers."
+  },
+  {
+    "name": "repetitive_ai_probe",
+    "source": "Written by Codex as a deliberately repetitive development probe to check the AI label is reachable. This is a constructed example, not an accuracy estimate or a formal evaluation sample.",
+    "text": "The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working. The system is working."
+  }
+]

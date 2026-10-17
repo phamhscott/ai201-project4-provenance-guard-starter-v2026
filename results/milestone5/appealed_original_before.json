@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-17T06:05:12+00:00",
+  "content_id": "0dfcb25f-0c7a-49d8-9fa3-416384d0aaf8",
+  "creator_id": "milestone5_supplied_human",
+  "guess": "unsure",
+  "model_score": 0.5588,
+  "style_score": 0.4753,
+  "combined_score": 0.5171,
+  "label": "Our signals cannot reliably tell whether this was written by a person or AI. This is not an accusation of AI use. You can request a review if you disagree.",
+  "status": "decided",
+  "stage": "labeled"
+}
