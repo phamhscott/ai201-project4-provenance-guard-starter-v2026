@@ -104,7 +104,7 @@ Request fields:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `text` | string, required | The writing to assess. Proposed maximum: 20,000 characters, including whitespace. |
+| `text` | string, required | The writing to assess. Maximum: 20,000 characters, including whitespace. |
 | `creator_id` | string, required | The identifier to associate with this submission and its audit records. |
 
 Successful response: **HTTP 200**.
@@ -127,7 +127,7 @@ Proposed errors use `{"error": "<code>", "message": "<explanation>"}`:
 | HTTP status | `error` | When |
 |---|---|---|
 | 400 | `invalid_request` | Missing or malformed JSON, a non-object body, or a required field that is missing, not a string, or blank. |
-| 413 | `text_too_long` | `text` exceeds the proposed 20,000-character limit. Reject before running either signal. |
+| 413 | `text_too_long` | `text` exceeds the 20,000-character limit. Reject before running either signal. |
 | 422 | `text_too_short` | Otherwise valid text has fewer than three tokens with the detector's tokenizer, so the supplied detector cannot score it. |
 | 503 | `detector_unavailable` | The local model cannot load. Return an error rather than inventing a score. |
 
