@@ -729,6 +729,16 @@ human label. The original four calibration inputs still fall in the middle
 band. No cutoffs, signal weights, or scoring features were changed to turn
 these development checks into an accuracy claim or a formal criterion pass.
 
+The submission that was later appealed used this exact request body from
+[submit_supplied_human_request.json](results/milestone5/submit_supplied_human_request.json):
+
+```json
+{
+  "text": "Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers.",
+  "creator_id": "milestone5_supplied_human"
+}
+```
+
 The appeal explanation below is explicitly a development-check request,
 not a fabricated account of the writer’s drafting history. Exact request body:
 
