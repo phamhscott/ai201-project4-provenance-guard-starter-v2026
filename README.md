@@ -375,9 +375,6 @@ identified it as human-written, it is used verbatim:
 
 > Thus, I think it’s time for a level of accountability. Never did I imagine that I would live in a time that I would have to wonder if a human or computer wrote something. The time has come for those of us who are writers to fight back against the wave of imposter writers.
 
-**Mixed/intermediate sample:**
-The three-input standalone exercise is incomplete until sample is added.
-
 The complete standalone commands, stdout, and stderr are preserved in
 [standalone_detector.txt](results/milestone3/standalone_detector.txt).
 Exact stdout from the two selected inputs:
